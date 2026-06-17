@@ -60,78 +60,72 @@ def main():
         'min_samples_split': [args.min_samples_split]
     }
 
-    # === FIX: Jangan set_experiment atau start_run! ===
-    # mlflow run sudah buat run dan experiment
-    # Langsung training dan log ke run yang sudah aktif
+    mlflow.set_experiment("Japanese_Universities_CI")
 
-    with joblib.parallel_backend('threading', n_jobs=2):
-        base_model = RandomForestClassifier(random_state=42)
-        grid_search = GridSearchCV(base_model, param_grid, cv=3, scoring='accuracy')
-        grid_search.fit(X_train, y_train)
+    with mlflow.start_run(run_name="CI_Training") as run:
+        with joblib.parallel_backend('threading', n_jobs=2):
+            base_model = RandomForestClassifier(random_state=42)
+            grid_search = GridSearchCV(base_model, param_grid, cv=3, scoring='accuracy')
+            grid_search.fit(X_train, y_train)
 
-    best_model = grid_search.best_estimator_
+        best_model = grid_search.best_estimator_
 
-    # Log langsung ke run yang sudah aktif (dari mlflow run)
-    for param, value in grid_search.best_params_.items():
-        mlflow.log_param(param, value)
-    mlflow.log_metric("best_cv_score", grid_search.best_score_)
+        for param, value in grid_search.best_params_.items():
+            mlflow.log_param(param, value)
+        mlflow.log_metric("best_cv_score", grid_search.best_score_)
 
-    y_pred = best_model.predict(X_test)
-    y_pred_proba = best_model.predict_proba(X_test)
+        y_pred = best_model.predict(X_test)
+        y_pred_proba = best_model.predict_proba(X_test)
 
-    acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred, average='weighted', zero_division=0)
-    rec = recall_score(y_test, y_pred, average='weighted', zero_division=0)
-    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+        acc = accuracy_score(y_test, y_pred)
+        prec = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+        rec = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+        f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
 
-    try:
-        roc_auc = roc_auc_score(y_test, y_pred_proba, multi_class='ovr')
-        mlflow.log_metric("roc_auc_ovr", roc_auc)
-    except ValueError:
-        pass
+        try:
+            roc_auc = roc_auc_score(y_test, y_pred_proba, multi_class='ovr')
+            mlflow.log_metric("roc_auc_ovr", roc_auc)
+        except ValueError:
+            pass
 
-    mlflow.log_metric("accuracy", acc)
-    mlflow.log_metric("precision_weighted", prec)
-    mlflow.log_metric("recall_weighted", rec)
-    mlflow.log_metric("f1_weighted", f1)
+        mlflow.log_metric("accuracy", acc)
+        mlflow.log_metric("precision_weighted", prec)
+        mlflow.log_metric("recall_weighted", rec)
+        mlflow.log_metric("f1_weighted", f1)
 
-    mlflow.sklearn.log_model(best_model, "random_forest_model")
+        mlflow.sklearn.log_model(best_model, "random_forest_model")
 
-    cm = confusion_matrix(y_test, y_pred)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.title("Confusion Matrix")
-    plt.xlabel("Predicted")
-    plt.ylabel("Actual")
-    plt.tight_layout()
-    plt.savefig("confusion_matrix.png", dpi=150)
-    plt.close()
-    mlflow.log_artifact("confusion_matrix.png")
-    os.remove("confusion_matrix.png")
+        cm = confusion_matrix(y_test, y_pred)
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.title("Confusion Matrix")
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.tight_layout()
+        plt.savefig("confusion_matrix.png", dpi=150)
+        plt.close()
+        mlflow.log_artifact("confusion_matrix.png")
+        os.remove("confusion_matrix.png")
 
-    importances = best_model.feature_importances_
-    features = X.columns
-    indices = np.argsort(importances)[::-1][:10]
+        importances = best_model.feature_importances_
+        features = X.columns
+        indices = np.argsort(importances)[::-1][:10]
 
-    plt.figure(figsize=(10, 6))
-    plt.barh(range(10), importances[indices][::-1], align='center')
-    plt.yticks(range(10), [features[i] for i in indices[::-1]])
-    plt.xlabel("Importance")
-    plt.title("Top 10 Feature Importances")
-    plt.tight_layout()
-    plt.savefig("feature_importance.png", dpi=150)
-    plt.close()
-    mlflow.log_artifact("feature_importance.png")
-    os.remove("feature_importance.png")
+        plt.figure(figsize=(10, 6))
+        plt.barh(range(10), importances[indices][::-1], align='center')
+        plt.yticks(range(10), [features[i] for i in indices[::-1]])
+        plt.xlabel("Importance")
+        plt.title("Top 10 Feature Importances")
+        plt.tight_layout()
+        plt.savefig("feature_importance.png", dpi=150)
+        plt.close()
+        mlflow.log_artifact("feature_importance.png")
+        os.remove("feature_importance.png")
 
-    # Get run info dari run yang sudah aktif
-    run = mlflow.active_run()
-    if run:
         print(f"\nRun ID: {run.info.run_id}")
-    
-    print(f"Best params: {grid_search.best_params_}")
-    print(f"Best CV score: {grid_search.best_score_:.4f}")
-    print(f"Test Accuracy: {acc:.4f}")
+        print(f"Best params: {grid_search.best_params_}")
+        print(f"Best CV score: {grid_search.best_score_:.4f}")
+        print(f"Test Accuracy: {acc:.4f}")
 
 
 if __name__ == "__main__":

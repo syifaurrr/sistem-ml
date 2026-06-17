@@ -27,24 +27,24 @@ jobs:
         run: |
           pip install mlflow scikit-learn pandas numpy matplotlib seaborn joblib
 
-      - name: Run MLflow Project
+      - name: Run MLflow Training
         env:
-          MLFLOW_ALLOW_FILE_STORE: "true"   # ← TAMBAH INI
+          MLFLOW_ALLOW_FILE_STORE: "true"
         run: |
           cd MLProject
-          mlflow run . --env-manager=local
+          python modelling.py  # ← Langsung python, mlruns dibuat di MLProject/
 
       - name: Upload artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.run_id }}
-          path: mlruns/
+          path: MLProject/mlruns/
           retention-days: 30
 
       - name: Commit mlruns back to repo
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add mlruns/
+          git add MLProject/mlruns/
           git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]" || echo "No changes"
           git push || echo "Nothing to push"
