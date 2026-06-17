@@ -1,19 +1,22 @@
+# .github/workflows/mlflow-ci.yml
 name: MLflow CI Training
 
 on:
   push:
-    branches: [main, master]
-  pull_request:
     branches: [main, master]
   workflow_dispatch:
 
 jobs:
   train:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,21 +28,23 @@ jobs:
           pip install mlflow scikit-learn pandas numpy matplotlib seaborn joblib
 
       - name: Run MLflow Project
+        env:
+          MLFLOW_ALLOW_FILE_STORE: "true"   # ← TAMBAH INI
         run: |
           cd MLProject
-          mlflow run . --env-manager=local   # ← FIX: --env-manager=local, bukan --no-conda
+          mlflow run . --env-manager=local
 
       - name: Upload artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.run_id }}
-          path: mlruns/   # ← FIX: Sesuaikan lokasi mlruns
+          path: mlruns/
           retention-days: 30
 
-      - name: Commit mlruns back to repo (Skilled)
+      - name: Commit mlruns back to repo
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add mlruns/   # ← FIX: Sesuaikan lokasi
-          git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]" || echo "No changes to commit"
+          git add mlruns/
+          git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]" || echo "No changes"
           git push || echo "Nothing to push"
