@@ -1,0 +1,47 @@
+name: MLflow CI Training
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Bisa trigger manual
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow scikit-learn pandas numpy matplotlib seaborn joblib
+
+      - name: Run MLflow Project
+        run: |
+          cd MLProject
+          mlflow run . --no-conda  # --no-conda karena kita pakai pip di VM
+
+      - name: Upload artifacts to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.run_id }}
+          path: |
+            MLProject/mlruns/
+            MLProject/*.png
+          retention-days: 30
+
+      - name: Commit mlruns back to repo (Skilled)
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add MLProject/mlruns/
+          git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]"
+          git push || echo "Nothing to commit"
