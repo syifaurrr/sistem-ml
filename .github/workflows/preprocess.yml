@@ -24,7 +24,7 @@ jobs:
         pip install pandas numpy scikit-learn kagglehub
 
     - name: Run preprocessing script
-      run: python automate_Muhammad Syifaurrohman.py   # ← GANTI NAMA FILE
+      run: python automate_Muhammad_Syifaurrohman.py   # ← GANTI NAMA FILE
 
     - name: Upload cleaned data as artifact
       uses: actions/upload-artifact@v4
