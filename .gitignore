@@ -1,5 +1,21 @@
-mlflow.db
-*.db
+# MLflow
 mlruns/
+mlflow.db
+*/mlruns/
+*/mlflow.db
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
