@@ -1,10 +1,9 @@
-
 name: Preprocess Dataset
 
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:  # Memungkinkan run manual
+  workflow_dispatch:
 
 jobs:
   preprocess:
@@ -25,7 +24,7 @@ jobs:
         pip install pandas numpy scikit-learn kagglehub
 
     - name: Run preprocessing script
-      run: python automate_Nama_siswa.py   # Ganti dengan nama file Anda
+      run: python automate_Muhammad_Syifaurrohman.py   # ← GANTI NAMA FILE
 
     - name: Upload cleaned data as artifact
       uses: actions/upload-artifact@v4
@@ -33,10 +32,10 @@ jobs:
         name: cleaned-data
         path: data_clean.csv
 
-    - name: (Optional) Commit and push cleaned data
+    - name: Commit and push cleaned data
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add data_clean.csv
-        git commit -m "Update cleaned dataset [skip ci]" || echo "No changes to commit"
-        git push
+        git diff --staged --quiet || git commit -m "Update cleaned dataset [skip ci]" || echo "No changes to commit"
+        git push || echo "Nothing to push"

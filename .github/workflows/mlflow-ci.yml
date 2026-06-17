@@ -5,7 +5,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-  workflow_dispatch:  # Bisa trigger manual
+  workflow_dispatch:
 
 jobs:
   train:
@@ -27,21 +27,19 @@ jobs:
       - name: Run MLflow Project
         run: |
           cd MLProject
-          mlflow run . --no-conda  # --no-conda karena kita pakai pip di VM
+          mlflow run . --env-manager=local   # ← FIX: --env-manager=local, bukan --no-conda
 
       - name: Upload artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.run_id }}
-          path: |
-            MLProject/mlruns/
-            MLProject/*.png
+          path: mlruns/   # ← FIX: Sesuaikan lokasi mlruns
           retention-days: 30
 
       - name: Commit mlruns back to repo (Skilled)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add MLProject/mlruns/
-          git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]"
-          git push || echo "Nothing to commit"
+          git add mlruns/   # ← FIX: Sesuaikan lokasi
+          git diff --staged --quiet || git commit -m "Update MLflow runs from CI [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
