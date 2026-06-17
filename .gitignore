@@ -1,9 +1,3 @@
-# MLflow
-mlruns/
-mlflow.db
-*/mlruns/
-*/mlflow.db
-
 # Python
 __pycache__/
 *.pyc
@@ -19,3 +13,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# MLflow DB (tapi biarkan mlruns/)
+mlflow.db
+*/mlflow.db
